@@ -183,7 +183,7 @@ button:hover {
     background: #ef4444;
 }
 
-/* JANELA DE CADASTRO */
+/* MODAL */
 
 dialog {
     position: fixed;
@@ -277,7 +277,7 @@ footer {
     margin-top: 50px;
 }
 
-/* CELULAR */
+/* RESPONSIVIDADE */
 
 @media (max-width: 600px) {
     header h1 {

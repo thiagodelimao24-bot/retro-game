@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const lista = document.getElementById("listarJogos");
     const pesquisarJogo = document.getElementById("pesquisarJogo");
 
-    // Recuperar jogos cadastrados
+    // RECUPERAR JOGOS
     let jogos = [];
 
     try {
@@ -19,6 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     } catch (erro) {
         jogos = [];
+        console.error("Erro ao carregar jogos:", erro);
     }
 
     // ABRIR FORMULÁRIO
@@ -48,11 +49,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const jogo = {
             id: Date.now(),
-            nome: nome,
-            plataforma: plataforma,
-            genero: genero,
-            imagem: imagem,
-            preco: preco
+            nome,
+            plataforma,
+            genero,
+            imagem,
+            preco
         };
 
         jogos.push(jogo);
@@ -66,7 +67,7 @@ document.addEventListener("DOMContentLoaded", () => {
         alert("Jogo cadastrado com sucesso!");
     });
 
-    // SALVAR NO NAVEGADOR
+    // SALVAR JOGOS
     function salvarJogos() {
         try {
             localStorage.setItem("jogosRetro", JSON.stringify(jogos));
@@ -75,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // CRIAR CARD DO JOGO
+    // CRIAR CARD
     function criarCard(jogo) {
         const card = document.createElement("article");
         card.classList.add("card-jogo");
@@ -95,16 +96,16 @@ document.addEventListener("DOMContentLoaded", () => {
         const titulo = document.createElement("h3");
         titulo.textContent = jogo.nome;
 
-        const nomePlataforma = document.createElement("p");
-        nomePlataforma.textContent = "🎮 Plataforma: " + jogo.plataforma;
+        const plataforma = document.createElement("p");
+        plataforma.textContent = "🎮 Plataforma: " + jogo.plataforma;
 
-        const nomeGenero = document.createElement("p");
-        nomeGenero.textContent = "🕹️ Gênero: " + jogo.genero;
+        const genero = document.createElement("p");
+        genero.textContent = "🕹️ Gênero: " + jogo.genero;
 
-        const valor = document.createElement("strong");
-        valor.classList.add("preco");
+        const preco = document.createElement("strong");
+        preco.classList.add("preco");
 
-        valor.textContent = Number(jogo.preco).toLocaleString("pt-BR", {
+        preco.textContent = Number(jogo.preco).toLocaleString("pt-BR", {
             style: "currency",
             currency: "BRL"
         });
@@ -117,14 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
             excluirJogo(jogo.id);
         });
 
-        info.append(
-            titulo,
-            nomePlataforma,
-            nomeGenero,
-            valor,
-            btnExcluir
-        );
-
+        info.append(titulo, plataforma, genero, preco, btnExcluir);
         card.append(capa, info);
         lista.appendChild(card);
     }
@@ -141,7 +135,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (jogosFiltrados.length === 0) {
             const mensagem = document.createElement("p");
-            mensagem.id = "mensagemVazia";
+            mensagem.classList.add("mensagem-vazia");
 
             mensagem.textContent = pesquisa
                 ? "Nenhum jogo encontrado."
@@ -158,7 +152,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // EXCLUIR JOGO
     function excluirJogo(id) {
-        const confirmar = confirm("Deseja realmente excluir este jogo?");
+        const confirmar = confirm("Deseja excluir este jogo?");
 
         if (confirmar) {
             jogos = jogos.filter((jogo) => jogo.id !== id);
@@ -168,12 +162,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // PESQUISAR JOGOS
-    pesquisarJogo.addEventListener("input", () => {
-        mostrarJogos();
-    });
+    // PESQUISAR
+    pesquisarJogo.addEventListener("input", mostrarJogos);
 
-    // CARREGAR JOGOS
+    // INICIAR SITE
     mostrarJogos();
 
 });
