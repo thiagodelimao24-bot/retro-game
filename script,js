@@ -1,0 +1,179 @@
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    const btnCadastrar = document.getElementById("btnCadastrar");
+    const btnCancelar = document.getElementById("btnCancelar");
+    const modal = document.getElementById("modalCadastro");
+    const form = document.getElementById("formJogo");
+    const lista = document.getElementById("listarJogos");
+    const pesquisarJogo = document.getElementById("pesquisarJogo");
+
+    // Recuperar jogos cadastrados
+    let jogos = [];
+
+    try {
+        jogos = JSON.parse(localStorage.getItem("jogosRetro")) || [];
+
+        if (!Array.isArray(jogos)) {
+            jogos = [];
+        }
+    } catch (erro) {
+        jogos = [];
+    }
+
+    // ABRIR FORMULÁRIO
+    btnCadastrar.addEventListener("click", () => {
+        modal.showModal();
+    });
+
+    // FECHAR FORMULÁRIO
+    btnCancelar.addEventListener("click", () => {
+        modal.close();
+    });
+
+    // CADASTRAR JOGO
+    form.addEventListener("submit", (evento) => {
+        evento.preventDefault();
+
+        const nome = document.getElementById("nome").value.trim();
+        const plataforma = document.getElementById("plataforma").value;
+        const genero = document.getElementById("genero").value.trim();
+        const imagem = document.getElementById("imagem").value.trim();
+        const preco = Number(document.getElementById("preco").value);
+
+        if (!nome || !plataforma || !genero || !imagem || preco <= 0) {
+            alert("Preencha todos os campos corretamente!");
+            return;
+        }
+
+        const jogo = {
+            id: Date.now(),
+            nome: nome,
+            plataforma: plataforma,
+            genero: genero,
+            imagem: imagem,
+            preco: preco
+        };
+
+        jogos.push(jogo);
+
+        salvarJogos();
+        mostrarJogos();
+
+        form.reset();
+        modal.close();
+
+        alert("Jogo cadastrado com sucesso!");
+    });
+
+    // SALVAR NO NAVEGADOR
+    function salvarJogos() {
+        try {
+            localStorage.setItem("jogosRetro", JSON.stringify(jogos));
+        } catch (erro) {
+            console.error("Erro ao salvar jogos:", erro);
+        }
+    }
+
+    // CRIAR CARD DO JOGO
+    function criarCard(jogo) {
+        const card = document.createElement("article");
+        card.classList.add("card-jogo");
+
+        const capa = document.createElement("div");
+        capa.classList.add("capa");
+
+        const imagemCapa = document.createElement("img");
+        imagemCapa.src = jogo.imagem;
+        imagemCapa.alt = "Capa do jogo " + jogo.nome;
+
+        capa.appendChild(imagemCapa);
+
+        const info = document.createElement("div");
+        info.classList.add("info-jogo");
+
+        const titulo = document.createElement("h3");
+        titulo.textContent = jogo.nome;
+
+        const nomePlataforma = document.createElement("p");
+        nomePlataforma.textContent = "🎮 Plataforma: " + jogo.plataforma;
+
+        const nomeGenero = document.createElement("p");
+        nomeGenero.textContent = "🕹️ Gênero: " + jogo.genero;
+
+        const valor = document.createElement("strong");
+        valor.classList.add("preco");
+
+        valor.textContent = Number(jogo.preco).toLocaleString("pt-BR", {
+            style: "currency",
+            currency: "BRL"
+        });
+
+        const btnExcluir = document.createElement("button");
+        btnExcluir.classList.add("btn-excluir");
+        btnExcluir.textContent = "Excluir Jogo";
+
+        btnExcluir.addEventListener("click", () => {
+            excluirJogo(jogo.id);
+        });
+
+        info.append(
+            titulo,
+            nomePlataforma,
+            nomeGenero,
+            valor,
+            btnExcluir
+        );
+
+        card.append(capa, info);
+        lista.appendChild(card);
+    }
+
+    // MOSTRAR JOGOS
+    function mostrarJogos() {
+        lista.innerHTML = "";
+
+        const pesquisa = pesquisarJogo.value.toLowerCase().trim();
+
+        const jogosFiltrados = jogos.filter((jogo) => {
+            return jogo.nome.toLowerCase().includes(pesquisa);
+        });
+
+        if (jogosFiltrados.length === 0) {
+            const mensagem = document.createElement("p");
+            mensagem.id = "mensagemVazia";
+
+            mensagem.textContent = pesquisa
+                ? "Nenhum jogo encontrado."
+                : "Nenhum jogo cadastrado 🎮";
+
+            lista.appendChild(mensagem);
+            return;
+        }
+
+        jogosFiltrados.forEach((jogo) => {
+            criarCard(jogo);
+        });
+    }
+
+    // EXCLUIR JOGO
+    function excluirJogo(id) {
+        const confirmar = confirm("Deseja realmente excluir este jogo?");
+
+        if (confirmar) {
+            jogos = jogos.filter((jogo) => jogo.id !== id);
+
+            salvarJogos();
+            mostrarJogos();
+        }
+    }
+
+    // PESQUISAR JOGOS
+    pesquisarJogo.addEventListener("input", () => {
+        mostrarJogos();
+    });
+
+    // CARREGAR JOGOS
+    mostrarJogos();
+
+});
