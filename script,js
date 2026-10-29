@@ -1,171 +1,217 @@
-
 document.addEventListener("DOMContentLoaded", () => {
+  const lista = document.getElementById("listarJogos");
+  const pesquisa = document.getElementById("pesquisa");
+  const modal = document.getElementById("modalJogo");
+  const formulario = document.getElementById("formJogo");
+  const btnCadastrar = document.getElementById("btnCadastrar");
+  const btnCancelar = document.getElementById("btnCancelar");
+  const btnFechar = document.getElementById("btnFechar");
 
-    const btnCadastrar = document.getElementById("btnCadastrar");
-    const btnCancelar = document.getElementById("btnCancelar");
-    const modal = document.getElementById("modalCadastro");
-    const form = document.getElementById("formJogo");
-    const lista = document.getElementById("listarJogos");
-    const pesquisarJogo = document.getElementById("pesquisarJogo");
+  const CHAVE = "retroGameJogos";
 
-    // RECUPERAR JOGOS
-    let jogos = [];
+  const jogosIniciais = [
+    {
+      id: "mario",
+      nome: "Super Mario World",
+      plataforma: "Super Nintendo",
+      genero: "Plataforma",
+      imagem: "https://images.igdb.com/igdb/image/upload/t_cover_big/co1wyy.jpg",
+      preco: 59.90
+    },
+    {
+      id: "sonic",
+      nome: "Sonic the Hedgehog",
+      plataforma: "Mega Drive",
+      genero: "Plataforma",
+      imagem: "https://images.igdb.com/igdb/image/upload/t_cover_big/co1v7u.jpg",
+      preco: 49.90
+    },
+    {
+      id: "streetfighter",
+      nome: "Street Fighter II",
+      plataforma: "Super Nintendo",
+      genero: "Luta",
+      imagem: "https://images.igdb.com/igdb/image/upload/t_cover_big/co1v0y.jpg",
+      preco: 69.90
+    },
+    {
+      id: "zelda",
+      nome: "The Legend of Zelda",
+      plataforma: "Nintendo",
+      genero: "Aventura",
+      imagem: "https://images.igdb.com/igdb/image/upload/t_cover_big/co1v4d.jpg",
+      preco: 79.90
+    }
+  ];
 
+  function carregarJogos() {
     try {
-        jogos = JSON.parse(localStorage.getItem("jogosRetro")) || [];
+      const dados = localStorage.getItem(CHAVE);
 
-        if (!Array.isArray(jogos)) {
-            jogos = [];
-        }
+      if (dados !== null) {
+        const jogos = JSON.parse(dados);
+        return Array.isArray(jogos) ? jogos : [...jogosIniciais];
+      }
+
+      return [...jogosIniciais];
     } catch (erro) {
-        jogos = [];
-        console.error("Erro ao carregar jogos:", erro);
+      console.error("Não foi possível carregar os jogos:", erro);
+      return [...jogosIniciais];
+    }
+  }
+
+  let jogos = carregarJogos();
+
+  function salvarJogos() {
+    try {
+      localStorage.setItem(CHAVE, JSON.stringify(jogos));
+      return true;
+    } catch (erro) {
+      alert("Não foi possível salvar os jogos neste navegador.");
+      console.error(erro);
+      return false;
+    }
+  }
+
+  function criarElemento(tag, classe, texto) {
+    const elemento = document.createElement(tag);
+    if (classe) elemento.className = classe;
+    if (texto !== undefined) elemento.textContent = texto;
+    return elemento;
+  }
+
+  function renderizarJogos(termo = "") {
+    lista.replaceChildren();
+
+    const busca = termo.trim().toLocaleLowerCase("pt-BR");
+
+    const filtrados = jogos.filter((jogo) =>
+      [jogo.nome, jogo.plataforma, jogo.genero]
+        .some((valor) => String(valor).toLocaleLowerCase("pt-BR").includes(busca))
+    );
+
+    if (filtrados.length === 0) {
+      lista.appendChild(
+        criarElemento(
+          "p",
+          "vazio",
+          jogos.length === 0
+            ? "Nenhum jogo cadastrado. Clique em “Cadastrar jogo” para começar."
+            : "Nenhum jogo encontrado para essa pesquisa."
+        )
+      );
+      return;
     }
 
-    // ABRIR FORMULÁRIO
-    btnCadastrar.addEventListener("click", () => {
-        modal.showModal();
+    filtrados.forEach((jogo) => {
+      const card = criarElemento("article", "card-jogo");
+
+      const imagem = document.createElement("img");
+      imagem.className = "capa-jogo";
+      imagem.src = jogo.imagem;
+      imagem.alt = "Capa de " + jogo.nome;
+      imagem.loading = "lazy";
+
+      imagem.addEventListener("error", () => {
+        imagem.removeAttribute("src");
+        imagem.alt = "Imagem indisponível";
+        imagem.style.objectFit = "contain";
+      }, { once: true });
+
+      const info = criarElemento("div", "info-jogo");
+      info.appendChild(criarElemento("h3", "", jogo.nome));
+      info.appendChild(criarElemento("p", "detalhe-jogo", "Plataforma: " + jogo.plataforma));
+      info.appendChild(criarElemento("p", "detalhe-jogo", "Gênero: " + jogo.genero));
+
+      const preco = criarElemento(
+        "p",
+        "preco-jogo",
+        Number(jogo.preco).toLocaleString("pt-BR", {
+          style: "currency",
+          currency: "BRL"
+        })
+      );
+
+      info.appendChild(preco);
+
+      const excluir = criarElemento("button", "btn-excluir", "Excluir jogo");
+      excluir.type = "button";
+      excluir.addEventListener("click", () => {
+        const confirmar = window.confirm(`Deseja excluir "${jogo.nome}"?`);
+
+        if (!confirmar) return;
+
+        const anterior = jogos;
+        jogos = jogos.filter((item) => item.id !== jogo.id);
+
+        if (!salvarJogos()) {
+          jogos = anterior;
+          return;
+        }
+
+        renderizarJogos(pesquisa.value);
+      });
+
+      info.appendChild(excluir);
+      card.append(imagem, info);
+      lista.appendChild(card);
     });
+  }
 
-    // FECHAR FORMULÁRIO
-    btnCancelar.addEventListener("click", () => {
-        modal.close();
-    });
+  btnCadastrar.addEventListener("click", () => {
+    formulario.reset();
+    modal.showModal();
+  });
 
-    // CADASTRAR JOGO
-    form.addEventListener("submit", (evento) => {
-        evento.preventDefault();
+  function fecharModal() {
+    modal.close();
+    formulario.reset();
+  }
 
-        const nome = document.getElementById("nome").value.trim();
-        const plataforma = document.getElementById("plataforma").value;
-        const genero = document.getElementById("genero").value.trim();
-        const imagem = document.getElementById("imagem").value.trim();
-        const preco = Number(document.getElementById("preco").value);
+  btnCancelar.addEventListener("click", fecharModal);
+  btnFechar.addEventListener("click", fecharModal);
 
-        if (!nome || !plataforma || !genero || !imagem || preco <= 0) {
-            alert("Preencha todos os campos corretamente!");
-            return;
-        }
+  modal.addEventListener("click", (evento) => {
+    if (evento.target === modal) fecharModal();
+  });
 
-        const jogo = {
-            id: Date.now(),
-            nome,
-            plataforma,
-            genero,
-            imagem,
-            preco
-        };
+  formulario.addEventListener("submit", (evento) => {
+    evento.preventDefault();
 
-        jogos.push(jogo);
+    const nome = document.getElementById("nome").value.trim();
+    const plataforma = document.getElementById("plataforma").value.trim();
+    const genero = document.getElementById("genero").value.trim();
+    const imagem = document.getElementById("imagem").value.trim();
+    const preco = Number(document.getElementById("preco").value);
 
-        salvarJogos();
-        mostrarJogos();
-
-        form.reset();
-        modal.close();
-
-        alert("Jogo cadastrado com sucesso!");
-    });
-
-    // SALVAR JOGOS
-    function salvarJogos() {
-        try {
-            localStorage.setItem("jogosRetro", JSON.stringify(jogos));
-        } catch (erro) {
-            console.error("Erro ao salvar jogos:", erro);
-        }
+    if (!nome || !plataforma || !genero || !imagem || !Number.isFinite(preco) || preco < 0) {
+      alert("Preencha todos os campos corretamente.");
+      return;
     }
 
-    // CRIAR CARD
-    function criarCard(jogo) {
-        const card = document.createElement("article");
-        card.classList.add("card-jogo");
+    const novoJogo = {
+      id: Date.now().toString() + Math.random().toString(36).slice(2),
+      nome,
+      plataforma,
+      genero,
+      imagem,
+      preco
+    };
 
-        const capa = document.createElement("div");
-        capa.classList.add("capa");
+    jogos.unshift(novoJogo);
 
-        const imagemCapa = document.createElement("img");
-        imagemCapa.src = jogo.imagem;
-        imagemCapa.alt = "Capa do jogo " + jogo.nome;
-
-        capa.appendChild(imagemCapa);
-
-        const info = document.createElement("div");
-        info.classList.add("info-jogo");
-
-        const titulo = document.createElement("h3");
-        titulo.textContent = jogo.nome;
-
-        const plataforma = document.createElement("p");
-        plataforma.textContent = "🎮 Plataforma: " + jogo.plataforma;
-
-        const genero = document.createElement("p");
-        genero.textContent = "🕹️ Gênero: " + jogo.genero;
-
-        const preco = document.createElement("strong");
-        preco.classList.add("preco");
-
-        preco.textContent = Number(jogo.preco).toLocaleString("pt-BR", {
-            style: "currency",
-            currency: "BRL"
-        });
-
-        const btnExcluir = document.createElement("button");
-        btnExcluir.classList.add("btn-excluir");
-        btnExcluir.textContent = "Excluir Jogo";
-
-        btnExcluir.addEventListener("click", () => {
-            excluirJogo(jogo.id);
-        });
-
-        info.append(titulo, plataforma, genero, preco, btnExcluir);
-        card.append(capa, info);
-        lista.appendChild(card);
+    if (!salvarJogos()) {
+      jogos.shift();
+      return;
     }
 
-    // MOSTRAR JOGOS
-    function mostrarJogos() {
-        lista.innerHTML = "";
+    renderizarJogos(pesquisa.value);
+    fecharModal();
+  });
 
-        const pesquisa = pesquisarJogo.value.toLowerCase().trim();
+  pesquisa.addEventListener("input", () => {
+    renderizarJogos(pesquisa.value);
+  });
 
-        const jogosFiltrados = jogos.filter((jogo) => {
-            return jogo.nome.toLowerCase().includes(pesquisa);
-        });
-
-        if (jogosFiltrados.length === 0) {
-            const mensagem = document.createElement("p");
-            mensagem.classList.add("mensagem-vazia");
-
-            mensagem.textContent = pesquisa
-                ? "Nenhum jogo encontrado."
-                : "Nenhum jogo cadastrado 🎮";
-
-            lista.appendChild(mensagem);
-            return;
-        }
-
-        jogosFiltrados.forEach((jogo) => {
-            criarCard(jogo);
-        });
-    }
-
-    // EXCLUIR JOGO
-    function excluirJogo(id) {
-        const confirmar = confirm("Deseja excluir este jogo?");
-
-        if (confirmar) {
-            jogos = jogos.filter((jogo) => jogo.id !== id);
-
-            salvarJogos();
-            mostrarJogos();
-        }
-    }
-
-    // PESQUISAR
-    pesquisarJogo.addEventListener("input", mostrarJogos);
-
-    // INICIAR SITE
-    mostrarJogos();
-
+  renderizarJogos();
 });
